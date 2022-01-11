@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:13.5-alpine
+    container_name: ${APP_NAME}_pgsql
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${SQL_DB}
+      - POSTGRES_USER=${SQL_USER}
+      - POSTGRES_PASSWORD=${SQL_PASSWORD}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - laravel-pg-docker
+    ports:
+      - '50432:5432'
+
+  php-apache:
+    container_name: ${APP_NAME}
+    build:
+      args:
+        user: ${USER_MACHINE}
+        uid: ${UID_MACHINE}
+      context: ./php
+      dockerfile: Dockerfile
+    ports:
+      - '8080:80'
+    volumes:
+      - ./src:/var/www/laravel_docker
+      - ./apache/default.conf:/etc/apache2/sites-enabled/000-default.conf
+    networks:
+      - laravel-pg-docker
+    depends_on:
+      - database
+networks:
+  laravel-pg-docker:
+    driver: bridge
